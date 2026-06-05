@@ -1,4 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { KeyboardHandlerService } from '../keyboard-handler.service';
 
 @Component({
@@ -10,14 +11,15 @@ import { KeyboardHandlerService } from '../keyboard-handler.service';
 export class Menu {
   protected readonly kb = inject(KeyboardHandlerService);
   protected readonly isOpen = signal(false);
+  private readonly router = inject(Router);
 
   toggle(): void {
     this.isOpen.update(v => !v);
   }
 
   scramble(): void {
-    this.kb.scrambleWithPoof();
     this.isOpen.set(false);
+    this.router.navigate(['/scramble']);
   }
 
   solve(): void {
