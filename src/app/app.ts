@@ -4,8 +4,10 @@ import {
   NO_ERRORS_SCHEMA,
   OnDestroy,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import { initializeRubikGame } from './code';
+import { KeyboardHandlerService } from './keyboard-handler.service';
 
 @Component({
   selector: 'app-root',
@@ -15,11 +17,12 @@ import { initializeRubikGame } from './code';
   schemas: [NO_ERRORS_SCHEMA],
 })
 export class App implements AfterViewInit, OnDestroy {
+  protected readonly kb = inject(KeyboardHandlerService);
+
   ngAfterViewInit(): void {
     initializeRubikGame();
+    this.kb.initialize();
   }
 
-  ngOnDestroy(): void {
-    // Keep a stable entry point for future cleanup if the game gets a destroy API.
-  }
+  ngOnDestroy(): void {}
 }

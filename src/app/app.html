@@ -1,4 +1,4 @@
-<div class="ui">
+<div class="ui" [class.timer-disabled]="!kb.timerEnabled()">
 
   <div class="ui__background"></div>
 
@@ -78,6 +78,11 @@
     <button class="btn btn--br btn--reset">
       <icon reset></icon>
     </button>
+  </div>
+
+  <!-- Poof transition overlay — driven by KeyboardHandlerService.poofActive -->
+  <div class="poof-overlay" [class.poof-active]="kb.poofActive()">
+    <span class="poof-label">Poof!</span>
   </div>
 
 </div>
