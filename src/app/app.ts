@@ -8,9 +8,11 @@ import {
 } from '@angular/core';
 import { initializeRubikGame } from './code';
 import { KeyboardHandlerService } from './keyboard-handler.service';
+import { Menu } from './menu/menu';
 
 @Component({
   selector: 'app-root',
+  imports: [Menu],
   templateUrl: './app.html',
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None,

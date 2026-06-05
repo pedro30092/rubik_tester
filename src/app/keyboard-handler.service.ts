@@ -32,10 +32,14 @@ export class KeyboardHandlerService implements OnDestroy {
   /** Formatted elapsed time driven by our own interval, e.g. "1:23". */
   readonly timerDisplay = signal('0:00');
 
+  /** True once the timer has started at least once in the current game. */
+  readonly timerRunning = signal(false);
+
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
   private timerPollId: ReturnType<typeof setInterval> | null = null;
-  private timerRunning = false;
+  private _timerRunning = false;
   private timerStartedAt: number | null = null;
+  private originalOnSolved: (() => void) | null = null;
 
   constructor() {
     // React to timerEnabled changes: pause or resume the game timer.
@@ -73,7 +77,7 @@ export class KeyboardHandlerService implements OnDestroy {
 
     // Update the display every 100 ms from our own start timestamp.
     this.timerPollId = setInterval(() => {
-      if (!this.timerRunning || this.timerStartedAt === null) return;
+      if (!this._timerRunning || this.timerStartedAt === null) return;
       this.timerDisplay.set(this.formatElapsed(Date.now() - this.timerStartedAt));
     }, 100);
   }
@@ -86,23 +90,27 @@ export class KeyboardHandlerService implements OnDestroy {
     const game = getGame();
     if (!game) return;
 
+    this.originalOnSolved = game.controls.onSolved;
+
     const originalStart = game.timer.start.bind(game.timer);
     game.timer.start = (continueGame?: boolean) => {
       if (!this.timerEnabled()) return;
       originalStart(continueGame);
       this.timerStartedAt = Date.now();
-      this.timerRunning = true;
+      this._timerRunning = true;
+      this.timerRunning.set(true);
     };
 
     const originalStop = game.timer.stop.bind(game.timer);
     game.timer.stop = () => {
-      this.timerRunning = false;
+      this._timerRunning = false;
       return originalStop();
     };
 
     const originalReset = game.timer.reset.bind(game.timer);
     game.timer.reset = () => {
-      this.timerRunning = false;
+      this._timerRunning = false;
+      this.timerRunning.set(false);
       this.timerStartedAt = null;
       this.timerDisplay.set('0:00');
       originalReset();
@@ -162,8 +170,11 @@ export class KeyboardHandlerService implements OnDestroy {
       () => {
         const game = getGame();
         if (!game) return;
+        // Restore normal solve detection before the new scramble begins.
+        if (this.originalOnSolved) game.controls.onSolved = this.originalOnSolved;
         // Reset display to 0:00 before scramble begins
-        this.timerRunning = false;
+        this._timerRunning = false;
+        this.timerRunning.set(false);
         this.timerStartedAt = null;
         this.timerDisplay.set('0:00');
         game.scrambler.scramble();
@@ -182,6 +193,9 @@ export class KeyboardHandlerService implements OnDestroy {
       this.resetPiecesToSolved(game);
       game.timer.stop();
       game.timer.reset();
+      // Suppress the solve-detection callback so free play after an
+      // auto-solve doesn't falsely trigger the "Complete!" animation.
+      game.controls.onSolved = () => {};
     });
   }
 
@@ -233,7 +247,8 @@ export class KeyboardHandlerService implements OnDestroy {
       clearInterval(check);
       if (this.timerEnabled()) {
         this.timerStartedAt = Date.now();
-        this.timerRunning = true;
+        this._timerRunning = true;
+        this.timerRunning.set(true);
       }
     }, 50);
   }

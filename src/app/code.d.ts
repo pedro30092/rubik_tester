@@ -17,6 +17,7 @@ export interface GameControls {
   /** Non-null while an automated scramble animation is running. */
   scramble: unknown | null;
   enabled: boolean;
+  onSolved: () => void;
   scrambleCube(): void;
   keyboardMove(
     type: string,

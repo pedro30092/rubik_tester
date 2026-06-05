@@ -1,0 +1,1 @@
+You can use README as base and review the code base if its required but remember to do it simpler with best practices as the angular expert you are and also ignore the SPEC modification for now, remember we are in development

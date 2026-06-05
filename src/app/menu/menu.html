@@ -1,0 +1,25 @@
+<div class="menu" [class.menu--open]="isOpen()">
+
+  <button class="menu__toggle" (click)="toggle()">
+    <svg class="icon" viewBox="0 0 100 80" style="width:0.875em;height:0.7em" fill="currentColor">
+      <g class="menu__bars">
+        <rect x="0" y="4" width="100" height="12" rx="6"/>
+        <rect x="0" y="34" width="100" height="12" rx="6"/>
+        <rect x="0" y="64" width="100" height="12" rx="6"/>
+      </g>
+      <g class="menu__cross">
+        <rect x="0" y="34" width="100" height="12" rx="6" transform="rotate(45 50 40)"/>
+        <rect x="0" y="34" width="100" height="12" rx="6" transform="rotate(-45 50 40)"/>
+      </g>
+    </svg>
+  </button>
+
+  <nav class="menu__panel">
+    <button class="menu__item" (click)="scramble()">Scramble</button>
+    <button class="menu__item" (click)="solve()">Solve</button>
+    <button class="menu__item"
+            [class.menu__item--off]="!kb.timerEnabled()"
+            (click)="kb.setTimerEnabled(!kb.timerEnabled())">Timer</button>
+  </nav>
+
+</div>
