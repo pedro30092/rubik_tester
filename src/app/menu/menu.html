@@ -20,6 +20,7 @@
     <button class="menu__item"
             [class.menu__item--off]="!kb.timerEnabled()"
             (click)="kb.setTimerEnabled(!kb.timerEnabled())">Timer</button>
+    <button class="menu__item" (click)="learning()">Learning</button>
   </nav>
 
 </div>

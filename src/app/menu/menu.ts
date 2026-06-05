@@ -19,11 +19,23 @@ export class Menu {
 
   scramble(): void {
     this.isOpen.set(false);
-    this.router.navigate(['/scramble']);
+    // If still on the intro screen, startGame() already scrambles — no poof needed.
+    if (!this.kb.ensureStarted()) {
+      this.router.navigate(['/scramble']);
+    }
   }
 
   solve(): void {
-    this.kb.solveWithPoof();
     this.isOpen.set(false);
+    // If still on the intro screen, just start the game (a fresh scramble is enough).
+    if (!this.kb.ensureStarted()) {
+      this.kb.solveWithPoof();
+    }
+  }
+
+  learning(): void {
+    this.isOpen.set(false);
+    this.kb.ensureStarted();
+    this.router.navigate(['/learning']);
   }
 }

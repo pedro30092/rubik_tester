@@ -8,7 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { getGame, Game } from './code';
+import { getGame, Game, startGame } from './code';
 
 /** Mirrors the STILL constant from code.js (Controls state = 0). */
 const STILL = 0;
@@ -202,6 +202,20 @@ export class KeyboardHandlerService implements OnDestroy {
   /** Toggle timer on / off. */
   setTimerEnabled(enabled: boolean): void {
     this.timerEnabled.set(enabled);
+  }
+
+  /**
+   * If the game is still on the intro/menu screen (state 0), calls startGame()
+   * so the cube zooms in and begins scrambling.
+   * Returns true when the game was just started (caller should skip its own
+   * action — startGame already includes a scramble).
+   * Returns false when already playing (caller proceeds normally).
+   */
+  ensureStarted(): boolean {
+    const game = getGame();
+    if (!game || game.state !== 0) return false;
+    startGame();
+    return true;
   }
 
   // ---------------------------------------------------------------------------
