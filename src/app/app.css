@@ -344,10 +344,45 @@ body {
   z-index: 5;
 }
 
-/* ── Timer disabled ─────────────────────────────────────────────────────── */
+/* ── Timer ──────────────────────────────────────────────────────────────── */
 
-.timer-disabled .text--timer {
+/* Move the game's timer off-screen so the game's opacity tween still runs
+   (querySelector finds it, transition.timer() animates it) but it's invisible. */
+.text--timer-game {
+  left: -9999px !important;
+  right: auto !important;
+}
+
+/* Angular-owned timer: same position, always fully opaque, toggle via visibility */
+.text--timer-ng {
+  pointer-events: none;
+  opacity: 1 !important;
+}
+
+.text--timer-ng.timer-hidden {
   visibility: hidden;
+}
+
+/* ── Timer toggle button ─────────────────────────────────────────────────── */
+
+/* Positioned bottom-center; always visible, not controlled by game transitions */
+.btn--timer-toggle {
+  position: fixed;
+  bottom: 1.2em;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 1 !important;
+  pointer-events: all !important;
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 1.2em;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.btn--timer-off {
+  opacity: 0.2 !important;
 }
 
 /* ── Poof overlay ───────────────────────────────────────────────────────── */
