@@ -5,7 +5,7 @@ import * as THREE from 'three';
   selector: 'app-canvas-box',
   imports: [],
   templateUrl: './canvas-box.html',
-  styleUrl: './canvas-box.css',
+  styleUrl: './canvas-box.scss',
 })
 export class CanvasBox implements OnInit {
   ngOnInit(): void {
@@ -17,19 +17,24 @@ export class CanvasBox implements OnInit {
   }
 
   createThreeJsBox(): void {
+    // REVIEW this approach of using the DOM directly because is not the best practice in Angular,
+    // but for the sake of simplicity and learning Three.js, we will go with it.
     const canvas = document.getElementById('canvas-box');
 
+    //This "Scene" seems to be the main instance in which we will work.
+    // Its like an "animation scene" and any new object will be add to the "scene"
     const scene = new THREE.Scene();
 
+    // MeshToonMaterial is a material type that works as "CSS" to our 3D elements
+    // Official documentations https://threejs.org/docs/index.html#LineBasicMaterial
+    // https://threejs.org/manual/#en/materials
     const material = new THREE.MeshToonMaterial();
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    //Sets the ligthing for our object
+    const ambientLight = new THREE.AmbientLight('#FFFFFF', 0.5);
     scene.add(ambientLight);
 
-    const bar = undefined;
-
-    console.log(bar);
-
+    //This works
     const pointLight = new THREE.PointLight(0xffffff, 0.5);
     pointLight.position.x = 2;
     pointLight.position.y = 2;

@@ -6,7 +6,7 @@ import { KeyboardHandlerService } from '../keyboard-handler.service';
   selector: 'app-menu',
   imports: [],
   templateUrl: './menu.html',
-  styleUrl: './menu.css',
+  styleUrl: './menu.scss',
 })
 export class Menu {
   protected readonly kb = inject(KeyboardHandlerService);
@@ -14,7 +14,7 @@ export class Menu {
   private readonly router = inject(Router);
 
   toggle(): void {
-    this.isOpen.update(v => !v);
+    this.isOpen.update((v) => !v);
   }
 
   scramble(): void {

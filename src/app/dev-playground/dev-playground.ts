@@ -5,6 +5,6 @@ import { CanvasBox } from '../canvas-box/canvas-box';
   selector: 'app-dev-playground',
   imports: [CanvasBox],
   templateUrl: './dev-playground.html',
-  styleUrl: './dev-playground.css',
+  styleUrl: './dev-playground.scss',
 })
 export class DevPlayground {}

@@ -7,7 +7,7 @@ import { Game } from './game/game';
   selector: 'app-root',
   imports: [RouterOutlet, Menu, Game],
   templateUrl: './app.html',
-  styleUrl: './app.css',
+  styleUrl: './app.scss',
   encapsulation: ViewEncapsulation.None,
 })
 export class App {

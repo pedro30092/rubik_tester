@@ -9,3 +9,51 @@ All projects requires:
     - eslint
     - husky (and lint-staged)
     - Optional: EditorConfig
+
+The source code for the cube is https://codepen.io/bsehovac/pen/EMyWVv
+
+-------
+
+PORT the current RUBIK's code into an angular approach. The plan is from Copilot:
+Phase 1 — Scaffolding (no Three.js yet)
+Rename cube.css → cube.scss and update styleUrl in the @Component decorator
+Add a /cube route to app.routes.ts so you can navigate to the component
+Update cube.html: replace the placeholder with <div class="cube-game" #container></div>
+Add minimal styles to cube.scss extracted from main.scss:
+:host → fills its parent (position: absolute, inset 0, overflow: hidden, cursor: default, user-select: none)
+.cube-game → fills :host the same way
+canvas { display: block; width: 100%; height: 100%; }
+Verify: navigate to /cube, styled empty container is visible
+
+Phase 2 — World (Three.js scene + render loop)
+Create src/app/cube/animation.ts — copy AnimationEngine + Animation classes directly from main.js with no changes
+Update cube.ts with AfterViewInit, OnDestroy, @ViewChild('container') containerRef!: ElementRef
+Port the World class into cube.ts (or a sidecar file). One change: this.container comes from the @ViewChild ref instead of game.dom.game
+In ngAfterViewInit, create World and start it; in ngOnDestroy stop the animation loop
+Verify: blank canvas renders at /cube and resizes correctly with the window
+
+Phase 3 — Cube geometry + model
+Create src/app/cube/geometry.ts — copy RoundedBoxGeometry + RoundedPlaneGeometry as-is
+Create src/app/cube/cube-model.ts — copy Cube renamed to RubikCube (avoids collision with the Angular component class). One change: replace this.game.themes.getColors() with a hardcoded default color object (the cube theme values directly from Themes.defaults.cube in main.js)
+Introduce a GameContext plain object inside cube.ts — a simple { world, cube, controls, scrambler } bag that mirrors the original game argument the ported classes expect, keeping the access patterns unchanged
+Initialize RubikCube, call .init()
+Verify: the 3D cube is visible in the scene
+
+Phase 4 — Interaction
+Create src/app/cube/tween.ts — copy Easing + Tween (imports Animation from animation.ts)
+Create src/app/cube/draggable.ts — copy Draggable class as-is
+Create src/app/cube/controls.ts — copy Controls. One change: game.dom.game (the event target for Draggable) comes from GameContext.containerElement
+Wire Controls into cube.ts, call .enable()
+Verify: clicking and dragging rotates cube layers with momentum snap
+
+Phase 5 — Scrambling
+Create src/app/cube/scrambler.ts — copy Scrambler as-is
+Wire Scrambler into GameContext
+Expose a public scramble() method on the Angular component that calls controls.scrambleCube()
+Verify: calling scramble() from a dev button or template executes the move sequence on the cube
+
+Key decisions to be aware of
+Naming conflict: Angular component class is Cube; the game's cube model must be renamed to RubikCube to coexist
+CSS → SCSS: requires a file rename and updating styleUrl in the decorator
+GameContext pattern: a plain object (not Angular services) so the ported classes work with zero structural changes — minimal cognitive delta from the original
+No route yet: /cube doesn't exist in app.routes.ts, needs adding in Phase 1

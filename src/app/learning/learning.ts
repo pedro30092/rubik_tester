@@ -5,7 +5,7 @@ import { applyAlgorithm } from '../code';
   selector: 'app-learning',
   imports: [],
   templateUrl: './learning.html',
-  styleUrl: './learning.css',
+  styleUrl: './learning.scss',
 })
 export class Learning {
   onTest(): void {
