@@ -25,7 +25,7 @@ export class CanvasBox implements OnInit {
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
-    const foo = this.someMessage();
+
     const bar = undefined;
 
     console.log(bar);
