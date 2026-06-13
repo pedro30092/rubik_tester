@@ -5,6 +5,7 @@ import {
   OnDestroy,
   ViewEncapsulation,
   inject,
+  isDevMode,
 } from '@angular/core';
 import { initializeRubikGame } from '../code';
 import { KeyboardHandlerService } from '../keyboard-handler.service';
@@ -21,6 +22,9 @@ export class Game implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     initializeRubikGame();
     this.kb.initialize();
+    if (isDevMode()) {
+      this.kb.startSolved();
+    }
   }
 
   ngOnDestroy(): void {}

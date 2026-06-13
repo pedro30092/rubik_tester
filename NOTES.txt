@@ -1,1 +1,8 @@
 You can use README as base and review the code base if its required but remember to do it simpler with best practices as the angular expert you are and also ignore the SPEC modification for now, remember we are in development
+
+Quick Commands:
+    CTRL + SHIFT + I = VS Code Prettier Shortcut
+
+
+SIMPLE PROMPTS (this are used for top priority for the AI):
+-The context and why there are other things is irrelevant and we will focus only in what Im asking.

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, isDevMode } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Menu } from './menu/menu';
 import { Game } from './game/game';
@@ -10,4 +10,6 @@ import { Game } from './game/game';
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class App {}
+export class App {
+  protected readonly isDevMode = isDevMode();
+}

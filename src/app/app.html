@@ -1,3 +1,6 @@
-<app-menu />
-<app-game />
+<!-- <app-menu />
+<app-game /> -->
 <router-outlet />
+@if (isDevMode) {
+  <div class="dev-badge">DEV</div>
+}

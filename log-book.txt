@@ -1,0 +1,11 @@
+Installing Three.js lib on angular https://dev.to/renancferro/understanding-and-implementing-threejs-with-angular-and-creating-a-3d-animation-3eea
+    - The initial test using and animating a simple object works using the three.js library. This will be the base known as pre-ngx-three. The idea is to work with simple lib-like integration over the required components until the update for angular 22 and ngx-three lib matches (see below).
+
+This library wrapps the three library to be an angular compatible api using declarative approach https://github.com/demike/ngx-three
+NOTE: The thing is that currently it seems it supports angular 20 (we are using angular 22). But there's the PR https://github.com/demike/ngx-three/pull/82 to update to the latest version. This was created 2 days ago (11 June, 2026).
+
+All projects requires:
+    - prettier
+    - eslint
+    - husky (and lint-staged)
+    - Optional: EditorConfig
