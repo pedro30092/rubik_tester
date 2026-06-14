@@ -25,6 +25,10 @@ An Angular 21 app that wraps a self-contained 3D Rubik's Cube game engine (`code
 
 - Angular 21, TypeScript 5.9, Three.js 0.184, Vitest 4, Prettier 3
 
+## Things to consider
+
+- When using some kind of color in hexadecimal format transform it to use uppercase letters (e.g., `#FFFFFF` instead of `0xffffff`).
+
 ## Dev notes
 
 - We are in development — ignore spec file changes unless explicitly asked.

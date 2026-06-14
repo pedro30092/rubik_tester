@@ -1,0 +1,21 @@
+@mixin fill-parent {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+}
+
+:host {
+  @include fill-parent;
+}
+
+.cube-game {
+  @include fill-parent;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

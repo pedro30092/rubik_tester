@@ -17,8 +17,10 @@ The source code for the cube is https://codepen.io/bsehovac/pen/EMyWVv
 PORT the current RUBIK's code into an angular approach. The plan is from Copilot:
 Phase 1 — Scaffolding (no Three.js yet)
 Rename cube.css → cube.scss and update styleUrl in the @Component decorator
-Add a /cube route to app.routes.ts so you can navigate to the component
-Update cube.html: replace the placeholder with <div class="cube-game" #container></div>
+
+- Add a /cube route to app.routes.ts so you can navigate to the component
+
+- Update cube.html: replace the placeholder with <div class="cube-game" #container></div>
 Add minimal styles to cube.scss extracted from main.scss:
 :host → fills its parent (position: absolute, inset 0, overflow: hidden, cursor: default, user-select: none)
 .cube-game → fills :host the same way
@@ -57,3 +59,8 @@ Naming conflict: Angular component class is Cube; the game's cube model must be 
 CSS → SCSS: requires a file rename and updating styleUrl in the decorator
 GameContext pattern: a plain object (not Angular services) so the ported classes work with zero structural changes — minimal cognitive delta from the original
 No route yet: /cube doesn't exist in app.routes.ts, needs adding in Phase 1
+
+
+--------- FIFA
+
+https://worldcup.epicsportslive.online/2026/06/most-watched-fifa-world-cup-in-history.html
