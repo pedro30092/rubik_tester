@@ -575,12 +575,112 @@ export class World extends Animation {
   }
 }
 
+// ─── Easing & Tween ──────────────────────────────────────────────────────────
+
+type EasingFn = (t: number) => number;
+
+const Easing = {
+  Power: {
+    In: (power: number): EasingFn => {
+      power = Math.round(power || 1);
+      return (t) => Math.pow(t, power);
+    },
+    Out: (power: number): EasingFn => {
+      power = Math.round(power || 1);
+      return (t) => 1 - Math.abs(Math.pow(t - 1, power));
+    },
+    InOut: (power: number): EasingFn => {
+      power = Math.round(power || 1);
+      return (t) =>
+        t < 0.5
+          ? Math.pow(t * 2, power) / 2
+          : (1 - Math.abs(Math.pow(t * 2 - 1 - 1, power))) / 2 + 0.5;
+    },
+  },
+  Sine: {
+    In: (): EasingFn => (t) => 1 + Math.sin((Math.PI / 2) * t - Math.PI / 2),
+    Out: (): EasingFn => (t) => Math.sin((Math.PI / 2) * t),
+    InOut: (): EasingFn => (t) => (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2,
+  },
+  Back: {
+    Out: (s: number): EasingFn => {
+      s = s || 1.70158;
+      return (t) => (t -= 1) * t * ((s + 1) * t + s) + 1;
+    },
+    In: (s: number): EasingFn => {
+      s = s || 1.70158;
+      return (t) => t * t * ((s + 1) * t - s);
+    },
+  },
+};
+
+interface TweenOptions {
+  duration?: number;
+  easing?: EasingFn;
+  onUpdate?: (tween: Tween) => void;
+  onComplete?: (tween: Tween) => void;
+  delay?: number | false;
+}
+
+/**
+ * A single time-based animation registered with the shared AnimationEngine.
+ * Ported from main.js; the only structural change is that the engine is now
+ * passed in explicitly instead of pulled from a global singleton.
+ *
+ * The from/to value-interpolation feature of the original is unused by the
+ * button controls, so it has been dropped to keep the port lean.
+ */
+class Tween extends Animation {
+  private duration: number;
+  private easing: EasingFn;
+  private onUpdate: (tween: Tween) => void;
+  private onComplete: (tween: Tween) => void;
+
+  progress = 0;
+  value = 0;
+  delta = 0;
+
+  constructor(engine: AnimationEngine, options: TweenOptions) {
+    super(engine, false);
+
+    this.duration = options.duration || 500;
+    this.easing = options.easing || ((t) => t);
+    this.onUpdate = options.onUpdate || (() => {});
+    this.onComplete = options.onComplete || (() => {});
+
+    const delay = options.delay || false;
+    if (delay) setTimeout(() => this.start(), delay);
+    else this.start();
+
+    this.onUpdate(this);
+  }
+
+  override update(delta: number): void {
+    const old = this.value;
+    this.progress += delta / this.duration;
+
+    this.value = this.easing(this.progress);
+    this.delta = this.value - old;
+
+    if (this.progress <= 1) {
+      this.onUpdate(this);
+    } else {
+      this.progress = 1;
+      this.value = 1;
+      this.onUpdate(this);
+      this.onComplete(this);
+      this.stop();
+    }
+  }
+}
+
 // ─── Game Context ────────────────────────────────────────────────────────────
 
 export interface GameContext {
+  engine: AnimationEngine;
   world: World;
-  // controls: Controls   ← wired in Phase 4
-  // scrambler: Scrambler ← wired in Phase 5
+  cube?: RubikCube;
+  controls?: Controls;
 }
 
 // ─── RubikCube ───────────────────────────────────────────────────────────────
@@ -793,4 +893,202 @@ export class RubikCube {
       this.pieces.push(piece);
     });
   }
+}
+
+// ─── Controls ────────────────────────────────────────────────────────────────
+
+/** Internal state machine — mirrors the STILL/ROTATING phases of the original. */
+const enum ControlState {
+  Still = 0,
+  Rotating = 2,
+}
+
+/** Standard cube-notation faces. Append `'` for counter-clockwise (prime) moves. */
+export type Move = 'L' | "L'" | 'R' | "R'" | 'U' | "U'" | 'D' | "D'" | 'F' | "F'" | 'B' | "B'";
+
+type Axis = 'x' | 'y' | 'z';
+
+interface LayerMove {
+  position: THREE.Vector3; // which layer to grab (±1 on one axis)
+  axis: Axis; // rotation axis
+  angle: number; // ±π/2
+}
+
+const HALF_PI = Math.PI / 2;
+
+/**
+ * Maps each notation move to a layer descriptor.
+ * `position` selects the slice; `axis`/`angle` define the turn.
+ * Signs follow the standard convention (clockwise looking at the face);
+ * a prime move is the same descriptor with the angle negated.
+ */
+const MOVES: Record<Move, LayerMove> = {
+  R: { position: new THREE.Vector3(1, 0, 0), axis: 'x', angle: -HALF_PI },
+  "R'": { position: new THREE.Vector3(1, 0, 0), axis: 'x', angle: HALF_PI },
+  L: { position: new THREE.Vector3(-1, 0, 0), axis: 'x', angle: HALF_PI },
+  "L'": { position: new THREE.Vector3(-1, 0, 0), axis: 'x', angle: -HALF_PI },
+  U: { position: new THREE.Vector3(0, 1, 0), axis: 'y', angle: -HALF_PI },
+  "U'": { position: new THREE.Vector3(0, 1, 0), axis: 'y', angle: HALF_PI },
+  D: { position: new THREE.Vector3(0, -1, 0), axis: 'y', angle: HALF_PI },
+  "D'": { position: new THREE.Vector3(0, -1, 0), axis: 'y', angle: -HALF_PI },
+  F: { position: new THREE.Vector3(0, 0, 1), axis: 'z', angle: -HALF_PI },
+  "F'": { position: new THREE.Vector3(0, 0, 1), axis: 'z', angle: HALF_PI },
+  B: { position: new THREE.Vector3(0, 0, -1), axis: 'z', angle: HALF_PI },
+  "B'": { position: new THREE.Vector3(0, 0, -1), axis: 'z', angle: -HALF_PI },
+};
+
+/**
+ * Button-driven cube controls. A trimmed port of main.js `Controls`:
+ * keeps only the layer-rotation machinery (no drag, raycasting, momentum,
+ * or cube reorientation). Public entry point is `move(notation)`.
+ */
+export class Controls {
+  /** Temporary parent that the active layer's pieces are reparented into and spun. */
+  readonly group = new THREE.Object3D();
+
+  private readonly flipEasings = [Easing.Power.Out(3), Easing.Sine.Out(), Easing.Back.Out(1.5)];
+  private readonly flipSpeeds = [125, 200, 300];
+  private flipConfig = 2;
+
+  private flipAxis = new THREE.Vector3();
+  private flipLayer: string[] | null = null;
+
+  private state = ControlState.Still;
+  private enabled = false;
+
+  /** Fired after a (non-scramble) move completes. */
+  onMove: () => void = () => {};
+
+  constructor(private context: GameContext) {
+    this.group.name = 'controls';
+    this.context.cube!.object.add(this.group);
+  }
+
+  enable(): void {
+    this.enabled = true;
+  }
+
+  disable(): void {
+    this.enabled = false;
+  }
+
+  /**
+   * Executes a single notation move (e.g. `'L'`, `"R'"`).
+   * No-op while another move is animating or while disabled.
+   * @returns true if the move started, false if rejected.
+   */
+  move(notation: Move, callback: () => void = () => {}): boolean {
+    if (this.state !== ControlState.Still || !this.enabled) return false;
+
+    const m = MOVES[notation];
+    const layer = this.getLayer(m.position);
+
+    this.flipAxis = new THREE.Vector3();
+    this.flipAxis[m.axis] = 1;
+    this.state = ControlState.Rotating;
+
+    this.selectLayer(layer);
+    this.rotateLayer(m.angle, () => {
+      this.state = ControlState.Still;
+      callback();
+    });
+
+    return true;
+  }
+
+  private rotateLayer(rotation: number, callback: () => void): void {
+    const config = this.flipConfig;
+    const easing = this.flipEasings[config];
+    const duration = this.flipSpeeds[config];
+    const cube = this.context.cube!;
+
+    new Tween(this.context.engine, {
+      easing,
+      duration,
+      onUpdate: (tween) => {
+        this.group.rotateOnAxis(this.flipAxis, tween.delta * rotation);
+      },
+      onComplete: () => {
+        this.onMove();
+
+        const layer = this.flipLayer!.slice(0);
+
+        cube.object.rotation.setFromVector3(
+          this.snapRotation(eulerToVector3(cube.object.rotation)),
+        );
+        this.group.rotation.setFromVector3(this.snapRotation(eulerToVector3(this.group.rotation)));
+        this.deselectLayer(this.flipLayer!);
+
+        callback();
+        void layer;
+      },
+    });
+  }
+
+  /** Returns the piece names that lie on the same slice as `position`. */
+  private getLayer(position: THREE.Vector3): string[] {
+    const cube = this.context.cube!;
+    const scalar = ({ 2: 6, 3: 3, 4: 4, 5: 3 } as Record<number, number>)[cube.size];
+    const axis = this.getMainAxis(position);
+    const layer: string[] = [];
+
+    cube.pieces.forEach((piece) => {
+      const piecePosition = piece.position.clone().multiplyScalar(scalar).round();
+      if (piecePosition[axis] === position[axis]) layer.push(piece.name);
+    });
+
+    return layer;
+  }
+
+  private selectLayer(layer: string[]): void {
+    this.group.rotation.set(0, 0, 0);
+    this.movePieces(layer, this.context.cube!.object, this.group);
+    this.flipLayer = layer;
+  }
+
+  private deselectLayer(layer: string[]): void {
+    this.movePieces(layer, this.group, this.context.cube!.object);
+    this.flipLayer = null;
+  }
+
+  /** Reparents pieces between containers while preserving world transform. */
+  private movePieces(layer: string[], from: THREE.Object3D, to: THREE.Object3D): void {
+    const cube = this.context.cube!;
+    from.updateMatrixWorld();
+    to.updateMatrixWorld();
+
+    layer.forEach((name) => {
+      const piece = cube.pieces.find((p) => p.name === name);
+      if (!piece) return;
+
+      piece.applyMatrix4(from.matrixWorld);
+      from.remove(piece);
+      piece.applyMatrix4(new THREE.Matrix4().copy(to.matrixWorld).invert());
+      to.add(piece);
+    });
+  }
+
+  private getMainAxis(vector: THREE.Vector3): Axis {
+    return (['x', 'y', 'z'] as Axis[]).reduce((a, b) =>
+      Math.abs(vector[a]) > Math.abs(vector[b]) ? a : b,
+    );
+  }
+
+  private roundAngle(angle: number): number {
+    const round = HALF_PI;
+    return Math.sign(angle) * Math.round(Math.abs(angle) / round) * round;
+  }
+
+  private snapRotation(vector: THREE.Vector3): THREE.Vector3 {
+    return vector.set(
+      this.roundAngle(vector.x),
+      this.roundAngle(vector.y),
+      this.roundAngle(vector.z),
+    );
+  }
+}
+
+/** Replacement for the removed Euler.toVector3(). */
+function eulerToVector3(euler: THREE.Euler): THREE.Vector3 {
+  return new THREE.Vector3(euler.x, euler.y, euler.z);
 }

@@ -8,7 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { getGame, Game, startGame } from './code';
+import { getGame, startGame } from './code';
 
 /** Mirrors the STILL constant from code.js (Controls state = 0). */
 const STILL = 0;
@@ -229,31 +229,30 @@ export class KeyboardHandlerService implements OnDestroy {
 
     // Phase 0: wait for the engine's intro animation to finish before
     // calling startGame() — same guard the native double-tap handler uses.
-    const waitForIdle = setInterval(() => {
-      if ((game.transition as any).activeTransitions > 0) return;
-      clearInterval(waitForIdle);
+    // const waitForIdle = setInterval(() => {
+    //   if ((game.transition as any).activeTransitions > 0) return;
+    //   clearInterval(waitForIdle);
 
-      startGame();
+    //   startGame();
 
-      // Phase A: wait until the scramble animation has started.
-      const waitForStart = setInterval(() => {
-        if (game.controls.scramble === null) return;
-        clearInterval(waitForStart);
+    //   // Phase A: wait until the scramble animation has started.
+    //   const waitForStart = setInterval(() => {
+    //     if (game.controls.scramble === null) return;
+    //     clearInterval(waitForStart);
 
-        // Phase B: wait until the scramble animation finishes.
-        const waitForEnd = setInterval(() => {
-          if (game.controls.scramble !== null) return;
-          clearInterval(waitForEnd);
-          this.resetPiecesToSolved(game);
-          game.timer.stop();
-          game.timer.reset();
-          // Suppress false "Complete!" trigger after the instant reset.
-          game.controls.onSolved = () => {};
-        }, 50);
-      }, 50);
-    }, 50);
+    //     // Phase B: wait until the scramble animation finishes.
+    //     const waitForEnd = setInterval(() => {
+    //       if (game.controls.scramble !== null) return;
+    //       clearInterval(waitForEnd);
+    //       this.resetPiecesToSolved(game);
+    //       game.timer.stop();
+    //       game.timer.reset();
+    //       // Suppress false "Complete!" trigger after the instant reset.
+    //       game.controls.onSolved = () => {};
+    //     }, 50);
+    //   }, 50);
+    // }, 50);
   }
-
 
   // Internals
   // ---------------------------------------------------------------------------
