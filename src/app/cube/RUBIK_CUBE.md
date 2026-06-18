@@ -2,8 +2,8 @@
 
 Technical reference for how the 3D Rubik's Cube is built inside
 [`cube-engine.ts`](./cube-engine.ts). Covers the two geometry primitives, the
-scene-graph hierarchy, and the `RubikCube` builder that assembles them into a
-visible, interactive cube model.
+scene-graph hierarchy, the `RubikCube` builder, and the `Controls` system that
+drives programmatic layer moves.
 
 ---
 
@@ -17,7 +17,10 @@ visible, interactive cube model.
 6. [`generateModel()` — meshes & stickers](#6-generatemodel--meshes--stickers)
 7. [`updateColors()` — painting faces](#7-updatecolors--painting-faces)
 8. [`userData` contract](#8-userdata-contract)
-9. [Glossary](#9-glossary)
+9. [Easing & Tween — the animation system](#9-easing--tween--the-animation-system)
+10. [Controls — programmatic moves](#10-controls--programmatic-moves)
+11. [Wiring order & the `controls.group` invariant](#11-wiring-order--the-controlsgroup-invariant)
+12. [Glossary](#12-glossary)
 
 ---
 
@@ -90,17 +93,18 @@ stays a function rather than a class.
 ## 3. The scene-graph hierarchy
 
 `RubikCube` nests **three `Object3D` containers** between the scene and the
-pieces. Each layer is a separate rotation anchor — this is what makes layer
-moves and whole-cube rotations independent.
+pieces. `Controls` adds a fourth node (`group`) as a temporary reparenting
+target during moves.
 
 ```
 world.scene
-  └── holder        ← whole-cube orientation anchor
-        └── animator ← per-move rotation anchor (a slice spins here)
-              └── object ← scaled container holding all 27 pieces
+  └── holder          ← whole-cube orientation anchor
+        └── animator  ← per-move rotation anchor (a slice spins here)
+              └── object ← scaled container holding all 27 pieces + controls.group
+                    ├── group (Controls)  ← active layer pieces move here during a move
                     ├── piece[0]   (Object3D)
                     │     ├── pieceCube   (grey RoundedBoxGeometry mesh)
-                    │     ├── edge "L"     (RoundedPlaneGeometry sticker)
+                    │     ├── edge "L"   (RoundedPlaneGeometry sticker)
                     │     └── edge "B"
                     ├── piece[1] ...
                     └── piece[26]
@@ -110,8 +114,7 @@ Why three nested nodes instead of one:
 
 - **`object`** carries the cube's overall **scale** (so a 2×2 vs 4×4 fills the
   same visual footprint).
-- **`animator`** is rotated by the Controls (Phase 4) to spin a single slice
-  without touching the rest of the cube.
+- **`animator`** is available as a rotation anchor for whole-cube orientation.
 - **`holder`** is rotated to reorient the entire cube in space.
 
 The constructor wires this chain once and adds `holder` to the scene:
@@ -122,8 +125,8 @@ this.animator.add(this.object);
 this.context.world.scene.add(this.holder);
 ```
 
-`context` is a `GameContext` — a small bag (`{ world }`) that hands the cube
-access to the shared scene without a direct dependency on `World`.
+`context` is a `GameContext` — a bag (`{ engine, world, cube?, controls? }`)
+that gives each system access to shared resources without direct cross-imports.
 
 ---
 
@@ -148,7 +151,9 @@ Builds (or rebuilds) the full visible cube:
    pieces never vanish at the screen edge while rotating.
 7. `updateColors(DEFAULT_CUBE_COLORS)` — paints everything.
 
-> The Phase-4 `controls` lines are stubbed as comments until Controls exists.
+> `object.clear()` removes ALL children — including `controls.group`. The
+> caller must re-add `controls.group` to `object` after every `init()` call.
+> See [§11](#11-wiring-order--the-controlsgroup-invariant).
 
 ### `reset()`
 
@@ -231,9 +236,9 @@ For each grid position:
    ```
 
    `distance = pieceSize / 2` puts the sticker exactly on the face surface.
-   The sticker is also scaled by `edgeScale` (0.82) so a thin gap of body
-   shows around each color — the classic "grid line" look. Its `name` is set
-   to the face letter (`FACE_NAMES[i]`), which is later used for coloring.
+   The sticker is scaled by `edgeScale` (0.82) so a thin gap of body shows
+   around each color — the classic "grid line" look. Its `name` is set to the
+   face letter (`FACE_NAMES[i]`), which is later used for coloring.
 
 4. Store references on `userData` (see next section) and push to `pieces`.
 
@@ -245,8 +250,8 @@ the table in `generatePositions()`.
 ## 7. `updateColors()` — painting faces
 
 ```ts
-this.pieces.forEach(piece => bodyMesh.material.color.setHex(colors.P));   // dark plastic
-this.edges.forEach(edge  => edge.material.color.setHex(colors[edge.name])); // sticker color
+this.pieces.forEach(piece => bodyMesh.material.color.setHex(colors.P));
+this.edges.forEach(edge  => edge.material.color.setHex(colors[edge.name]));
 ```
 
 - Every piece **body** gets color `P` (near-black plastic).
@@ -257,31 +262,27 @@ this.edges.forEach(edge  => edge.material.color.setHex(colors[edge.name])); // s
 The color source is the hardcoded `DEFAULT_CUBE_COLORS` constant (ported from
 `Themes.defaults.cube` in the original `main.js`):
 
-| Key | Hex        | Face / role |
-| --- | ---------- | ----------- |
-| `U` | `0xffffff` | white (up)  |
+| Key | Hex        | Face / role   |
+| --- | ---------- | ------------- |
+| `U` | `0xffffff` | white (up)    |
 | `D` | `0xffef48` | yellow (down) |
-| `F` | `0xef3923` | red (front) |
-| `R` | `0x41aac8` | blue (right) |
+| `F` | `0xef3923` | red (front)   |
+| `R` | `0x41aac8` | blue (right)  |
 | `B` | `0xff8c0a` | orange (back) |
-| `L` | `0x82ca38` | green (left) |
-| `P` | `0x08101a` | piece body |
+| `L` | `0x82ca38` | green (left)  |
+| `P` | `0x08101a` | piece body    |
 | `G` | `0xd1d5db` | background (unused here) |
-
-The early-return guard (`if (!pieces.length || !edges.length) return;`) makes
-it safe to call before `generateModel()` has run.
 
 ---
 
 ## 8. `userData` contract
 
-Each piece stores three entries on Three.js's free-form `userData` bag,
-consumed by later phases (Controls, save/load):
+Each piece stores three entries on Three.js's free-form `userData` bag:
 
 | Key      | Value                                   | Used by |
 | -------- | --------------------------------------- | ------- |
 | `cube`   | the body `Mesh`                         | `init()` / `updateColors()` |
-| `edges`  | `string[]` of this piece's face letters | Controls (Phase 4) — which faces a piece exposes |
+| `edges`  | `string[]` of this piece's face letters | Controls — which faces a piece exposes |
 | `start`  | `{ position, rotation }` clones         | reset / solve-detection |
 
 `init()` collects every `userData.cube` into the flat `cubes` array for fast
@@ -290,13 +291,154 @@ stickers across the whole cube.
 
 ---
 
-## 9. Glossary
+## 9. Easing & Tween — the animation system
 
-| Term            | Meaning |
-| --------------- | ------- |
-| **piece**       | One `Object3D` = one cubie (body + its stickers). |
-| **body / cube** | The grey `RoundedBoxGeometry` mesh inside a piece. |
+### `Easing`
+
+A collection of pure easing functions, each returning `(t: number) => number`
+where `t ∈ [0, 1]`. Three families are used by Controls:
+
+| Preset             | Character                        | `flipConfig` |
+| ------------------ | -------------------------------- | ------------ |
+| `Power.Out(3)`     | Fast cubic snap — 125 ms         | `0` (default) |
+| `Sine.Out()`       | Smooth sinusoidal — 200 ms       | `1` |
+| `Back.Out(1.5)`    | Slight bounce at end — 300 ms    | `2` |
+
+To change the move feel, set `flipConfig` on `Controls`:
+```ts
+controls.flipConfig = 1; // smooth sine
+```
+
+### `Tween` (extends `Animation`)
+
+Drives a single timed animation through the shared `AnimationEngine` RAF loop.
+
+**Key properties consumed by `Controls.rotateLayer()`:**
+- `tween.delta` — how much the eased value changed since the last frame. Used
+  to compute `rotateOnAxis` increments so the total rotation stays exact.
+- `tween.value` — the current eased value `∈ [0, 1]`.
+
+`Tween` is created, runs until `progress >= 1`, fires `onComplete`, then
+removes itself from the engine. No cleanup needed by the caller.
+
+> `Draggable` (the original pointer-event class) has **zero connection** to
+> smooth transitions. The easing is entirely `Tween` + `AnimationEngine`.
+
+---
+
+## 10. Controls — programmatic moves
+
+`Controls` translates a notation string (`'L'`, `"R'"`, `'U'`, …) into an
+animated layer rotation. It is the only public API needed to move the cube
+from buttons or external code.
+
+### Public API
+
+```ts
+controls.move('L');          // clockwise L face
+controls.move("R'");         // counter-clockwise R face
+controls.move('U', () => {}); // with completion callback
+```
+
+`move()` returns `false` and is a no-op if another move is animating or
+`Controls` is disabled.
+
+### How a move works internally
+
+```
+move('L')
+  │
+  ├─ MOVES['L'] → { position: (-1,0,0), axis: 'x', angle: +π/2 }
+  │
+  ├─ getLayer(position)
+  │     Scans cube.pieces, finds the 9 whose x-position matches → string[]
+  │
+  ├─ selectLayer(layer)
+  │     Reparents those 9 pieces: cube.object → controls.group
+  │     Resets group.rotation to (0,0,0)
+  │
+  ├─ rotateLayer(angle, callback)
+  │     Creates a Tween; each frame: group.rotateOnAxis(flipAxis, tween.delta * angle)
+  │     onComplete: snaps rotations to exact multiples of π/2,
+  │                 calls deselectLayer()
+  │
+  └─ deselectLayer(layer)
+        Reparents pieces back: controls.group → cube.object
+        Preserves world transform via applyMatrix4 + invert()
+```
+
+### Three.js r184 API fixes vs. original `main.js`
+
+| Original                             | Ported                                      |
+| ------------------------------------ | ------------------------------------------- |
+| `piece.applyMatrix(m)`               | `piece.applyMatrix4(m)`                     |
+| `new THREE.Matrix4().getInverse(m)`  | `new THREE.Matrix4().copy(m).invert()`      |
+| `euler.toVector3()`                  | `new THREE.Vector3(e.x, e.y, e.z)` (helper `eulerToVector3`) |
+
+### `MOVES` table
+
+The complete notation-to-descriptor map. All 12 standard face moves (6 faces × clockwise/prime):
+
+| Move | Position   | Axis | Angle  |
+| ---- | ---------- | ---- | ------ |
+| `R`  | `(1,0,0)`  | x    | −π/2   |
+| `R'` | `(1,0,0)`  | x    | +π/2   |
+| `L`  | `(-1,0,0)` | x    | +π/2   |
+| `L'` | `(-1,0,0)` | x    | −π/2   |
+| `U`  | `(0,1,0)`  | y    | −π/2   |
+| `U'` | `(0,1,0)`  | y    | +π/2   |
+| `D`  | `(0,-1,0)` | y    | +π/2   |
+| `D'` | `(0,-1,0)` | y    | −π/2   |
+| `F`  | `(0,0,1)`  | z    | −π/2   |
+| `F'` | `(0,0,1)`  | z    | +π/2   |
+| `B`  | `(0,0,-1)` | z    | +π/2   |
+| `B'` | `(0,0,-1)` | z    | −π/2   |
+
+---
+
+## 11. Wiring order & the `controls.group` invariant
+
+**The problem.** `RubikCube.init()` calls `object.clear()`, which removes ALL
+children — including `controls.group`. If `group` is not re-added, pieces
+reparented into it during a move disappear from the scene.
+
+**The rule.** After every `init()` call, `controls.group` must be re-added to
+`cube.object`:
+
+```ts
+// cube.ts — ngAfterViewInit
+this.engine   = new AnimationEngine();
+this.world    = new World(this.engine, this.containerRef.nativeElement);
+
+this.context  = { engine: this.engine, world: this.world };
+
+this.rubikCube = new RubikCube(this.context);
+this.context.cube = this.rubikCube;
+
+this.controls = new Controls(this.context);
+this.context.controls = this.controls;
+
+this.rubikCube.init();
+this.rubikCube.object.add(this.controls.group); // ← must follow every init()
+this.controls.enable();
+```
+
+**Why `Controls` is created before `init()`.** `Controls` adds `group` to
+`object` in its constructor. `init()` clears it. The re-add after `init()` is
+the deliberate fix — not moving the line into the constructor, because any
+future `init()` call (e.g. size change) would strip the group again.
+
+---
+
+## 12. Glossary
+
+| Term               | Meaning |
+| ------------------ | ------- |
+| **piece**          | One `Object3D` = one cubie (body + its stickers). |
+| **body / cube**    | The grey `RoundedBoxGeometry` mesh inside a piece. |
 | **edge / sticker** | A colored `RoundedPlaneGeometry` mesh on a face. (Note: "edge" here means *sticker face*, not the cube-theory "edge piece".) |
 | **holder / animator / object** | The three nested rotation-anchor containers. |
-| **`GameContext`** | `{ world }` bag passed in so the cube can reach the shared scene. |
-| **`frustumCulled`** | Three.js flag; disabled so pieces never disappear at screen edges mid-rotation. |
+| **group**          | `Controls`'s temporary reparenting node; pieces move here during an animated layer rotation. |
+| **`GameContext`**  | `{ engine, world, cube?, controls? }` bag wired incrementally in `cube.ts`. |
+| **`flipConfig`**   | Index `0–2` selecting the easing preset and duration for layer moves. |
+| **`frustumCulled`**| Three.js flag; disabled so pieces never disappear at screen edges mid-rotation. |
