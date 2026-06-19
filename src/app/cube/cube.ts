@@ -28,8 +28,6 @@ export class Cube implements AfterViewInit, OnDestroy {
   readonly whiteUp = signal(true);
 
   ngAfterViewInit(): void {
-    // Dynamically import the animation engine to avoid loading it before the view is initialized.
-    console.log('Loading animation engine...');
     this.engine = new AnimationEngine();
     this.world = new World(this.engine, this.containerRef.nativeElement);
 
@@ -48,7 +46,6 @@ export class Cube implements AfterViewInit, OnDestroy {
     this.controls.enable();
   }
 
-  /** Public entry point for UI buttons — e.g. <button (click)="move('L')"> */
   move(notation: Move): void {
     this.controls.move(notation);
   }
@@ -66,11 +63,25 @@ export class Cube implements AfterViewInit, OnDestroy {
   flipOrientation(): void {
     const next = !this.whiteUp();
     this.whiteUp.set(next);
-    this.rubikCube.holder.rotation.x = next ? 0 : Math.PI;
+    this.rubikCube.rotateCube('x', next ? 0 : Math.PI);
   }
 
+  // ── Orbit pad ──────────────────────────────────────────────────────────────
+
   spinLeft(): void {
-    this.rubikCube.holder.rotation.y += Math.PI / 2;
+    this.rubikCube.rotateCube('y', this.rubikCube.holder.rotation.y + Math.PI / 2);
+  }
+
+  spinRight(): void {
+    this.rubikCube.rotateCube('y', this.rubikCube.holder.rotation.y - Math.PI / 2);
+  }
+
+  tiltUp(): void {
+    this.rubikCube.rotateCube('x', this.rubikCube.holder.rotation.x - Math.PI / 2);
+  }
+
+  tiltDown(): void {
+    this.rubikCube.rotateCube('x', this.rubikCube.holder.rotation.x + Math.PI / 2);
   }
 
   ngOnDestroy(): void {

@@ -475,6 +475,8 @@ export class World extends Animation {
   fov = 10;
   /** Callbacks invoked after each resize, allowing dependents to react. */
   readonly onResize: (() => void)[] = [];
+  /** Callbacks invoked once per frame, before the scene is rendered. */
+  readonly onUpdate: (() => void)[] = [];
 
   /** Virtual stage dimensions (in world units) the camera is fitted to. */
   private readonly stage = { width: 2, height: 3 };
@@ -501,6 +503,7 @@ export class World extends Animation {
    * @param delta - Time elapsed since the last frame in milliseconds.
    */
   override update(): void {
+    this.onUpdate.forEach((cb) => cb());
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -731,6 +734,7 @@ export class RubikCube {
 
   private scale = 1;
   private sizeGenerated = 0;
+  private activeTweens: Partial<Record<'x' | 'y', Tween>> = {};
 
   constructor(private context: GameContext) {
     this.holder.add(this.animator);
@@ -773,6 +777,26 @@ export class RubikCube {
     this.holder.rotation.set(0, 0, 0);
     this.object.rotation.set(0, 0, 0);
     this.animator.rotation.set(0, 0, 0);
+  }
+
+  /**
+   * Animates the cube's orientation anchor (holder) to an absolute target angle
+   * on the given axis using the shared Tween/RAF system.
+   * Cancels any in-flight animation on the same axis before starting a new one.
+   */
+  rotateCube(axis: 'x' | 'y', to: number, duration = 400): void {
+    this.activeTweens[axis]?.stop();
+    const from = this.holder.rotation[axis];
+    this.activeTweens[axis] = new Tween(this.context.engine, {
+      duration,
+      easing: Easing.Sine.Out(),
+      onUpdate: (tween) => {
+        this.holder.rotation[axis] = from + (to - from) * tween.value;
+      },
+      onComplete: () => {
+        delete this.activeTweens[axis];
+      },
+    });
   }
 
   updateColors(colors: CubeColors): void {

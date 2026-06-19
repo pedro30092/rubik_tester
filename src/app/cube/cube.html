@@ -1,7 +1,16 @@
-<button (click)="spinLeft()">←</button>
-<button (click)="move('L')">L</button>
-<button (click)="move('R')">R</button>
-<button (click)="scramble()">Scr</button>
-<button (click)="reset()">Rst</button>
-<button [class.off]="!whiteUp()" (click)="flipOrientation()">Up</button>
+<div class="toolbar">
+  <button (click)="move('L')">L</button>
+  <button (click)="move('R')">R</button>
+  <button (click)="scramble()">Scr</button>
+  <button (click)="reset()">Rst</button>
+  <button [class.off]="!whiteUp()" (click)="flipOrientation()">Up</button>
+</div>
+
+<div class="orbit-pad">
+  <button class="orbit-btn orbit-btn--up" (click)="tiltUp()">↑</button>
+  <button class="orbit-btn orbit-btn--left" (click)="spinLeft()">←</button>
+  <button class="orbit-btn orbit-btn--right" (click)="spinRight()">→</button>
+  <button class="orbit-btn orbit-btn--down" (click)="tiltDown()">↓</button>
+</div>
+
 <div class="cube-game" #container></div>

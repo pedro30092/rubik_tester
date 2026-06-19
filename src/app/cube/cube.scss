@@ -20,9 +20,19 @@ canvas {
   height: 100%;
 }
 
-button {
-  position: relative;
+// ── Toolbar ────────────────────────────────────────────────────────────────────
+
+.toolbar {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+button {
   width: 50px;
   font-size: 11px;
   padding: 4px 0;
@@ -32,3 +42,30 @@ button {
 button.off {
   opacity: 0.35;
 }
+
+// ── Orbit pad ──────────────────────────────────────────────────────────────────
+
+.orbit-pad {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 4px;
+}
+
+.orbit-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.orbit-btn--up    { grid-column: 2; grid-row: 1; }
+.orbit-btn--left  { grid-column: 1; grid-row: 2; }
+.orbit-btn--right { grid-column: 3; grid-row: 2; }
+.orbit-btn--down  { grid-column: 2; grid-row: 3; }
