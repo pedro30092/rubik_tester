@@ -46,6 +46,19 @@ export class Cube implements AfterViewInit, OnDestroy {
     this.controls.enable();
   }
 
+  // ── Algorithm buttons ──────────────────────────────────────────────────────
+
+  moveRight(): void {
+    // Sexy move: U' F' U F
+    this.controls.applyAlgorithm(["U'", "F'", 'U', 'F']);
+  }
+
+  moveLeft(): void {
+    // Inverse of (U' F' U F), derived by reversing and inverting each step:
+    //   reverse → F U F' U'   invert each → F' U' F U
+    this.controls.applyAlgorithm(["F'", "U'", 'F', 'U']);
+  }
+
   move(notation: Move): void {
     this.controls.move(notation);
   }

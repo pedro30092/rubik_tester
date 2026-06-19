@@ -1021,6 +1021,48 @@ export class Controls {
     return true;
   }
 
+  /**
+   * Applies a sequence of notation moves one after another, remapped to the
+   * cube's current visual orientation so moves act on the face the user sees.
+   */
+  applyAlgorithm(notations: string[]): void {
+    const mapping = this.buildFaceRemapping();
+    const apply = (remaining: string[]) => {
+      if (remaining.length === 0) return;
+      const [head, ...tail] = remaining;
+      const remapped = (mapping[head[0]] + head.slice(1)) as Move;
+      this.move(remapped, () => apply(tail));
+    };
+    apply(notations);
+  }
+
+  private buildFaceRemapping(): Record<string, string> {
+    const canonical: [string, THREE.Vector3][] = [
+      ['R', new THREE.Vector3(1, 0, 0)],
+      ['L', new THREE.Vector3(-1, 0, 0)],
+      ['U', new THREE.Vector3(0, 1, 0)],
+      ['D', new THREE.Vector3(0, -1, 0)],
+      ['F', new THREE.Vector3(0, 0, 1)],
+      ['B', new THREE.Vector3(0, 0, -1)],
+    ];
+    const qInv = this.context.cube!.holder.quaternion.clone().invert();
+    const mapping: Record<string, string> = {};
+    for (const [face, worldDir] of canonical) {
+      const localDir = worldDir.clone().applyQuaternion(qInv);
+      let best = face;
+      let bestDot = -Infinity;
+      for (const [candidate, normal] of canonical) {
+        const dot = localDir.dot(normal);
+        if (dot > bestDot) {
+          bestDot = dot;
+          best = candidate;
+        }
+      }
+      mapping[face] = best;
+    }
+    return mapping;
+  }
+
   scrambleCube(scrambler: Scrambler): void {
     const converted = scrambler.converted;
     const move = converted[0];

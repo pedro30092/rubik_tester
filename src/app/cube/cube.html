@@ -1,6 +1,6 @@
 <div class="toolbar">
-  <button (click)="move('L')">L</button>
-  <button (click)="move('R')">R</button>
+  <button (click)="moveLeft()">L</button>
+  <button (click)="moveRight()">R</button>
   <button (click)="scramble()">Scr</button>
   <button (click)="reset()">Rst</button>
   <button [class.off]="!whiteUp()" (click)="flipOrientation()">Up</button>
