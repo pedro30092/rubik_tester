@@ -19,8 +19,9 @@ drives programmatic layer moves.
 8. [`userData` contract](#8-userdata-contract)
 9. [Easing & Tween — the animation system](#9-easing--tween--the-animation-system)
 10. [Controls — programmatic moves](#10-controls--programmatic-moves)
-11. [Wiring order & the `controls.group` invariant](#11-wiring-order--the-controlsgroup-invariant)
-12. [Glossary](#12-glossary)
+11. [Scrambler — random move generation](#11-scrambler--random-move-generation)
+12. [Wiring order & the `controls.group` invariant](#12-wiring-order--the-controlsgroup-invariant)
+13. [Glossary](#13-glossary)
 
 ---
 
@@ -125,7 +126,7 @@ this.animator.add(this.object);
 this.context.world.scene.add(this.holder);
 ```
 
-`context` is a `GameContext` — a bag (`{ engine, world, cube?, controls? }`)
+`context` is a `GameContext` — a bag (`{ engine, world, cube?, controls?, scrambler? }`)
 that gives each system access to shared resources without direct cross-imports.
 
 ---
@@ -335,13 +336,20 @@ from buttons or external code.
 ### Public API
 
 ```ts
-controls.move('L');          // clockwise L face
-controls.move("R'");         // counter-clockwise R face
+controls.move('L');           // clockwise L face
+controls.move("R'");          // counter-clockwise R face
 controls.move('U', () => {}); // with completion callback
+
+controls.scrambleCube(scrambler); // execute Scrambler.converted sequence
 ```
 
 `move()` returns `false` and is a no-op if another move is animating or
 `Controls` is disabled.
+
+`scrambleCube(scrambler)` bypasses the `ControlState` guard and drives the
+full `scrambler.converted` sequence recursively — each move callback calls
+itself until the array is empty. During scramble, `rotateLayer` uses
+`flipConfig = 0` (fastest, 125 ms) and skips the `onMove` callback.
 
 ### How a move works internally
 
@@ -396,7 +404,85 @@ The complete notation-to-descriptor map. All 12 standard face moves (6 faces × 
 
 ---
 
-## 11. Wiring order & the `controls.group` invariant
+## 11. Scrambler — random move generation
+
+`Scrambler` builds a random (or provided) move sequence and converts it into
+the flat list of layer descriptors that `Controls.scrambleCube()` consumes.
+
+### Public API
+
+```ts
+scrambler.scramble();          // generate a random sequence for cube.size
+scrambler.scramble('R U F');   // parse a specific sequence
+scrambler.moves     // string[] — human-readable  e.g. ["R", "U'", "F2"]
+scrambler.converted // ScrambledLayerMove[] — expanded, ready for Controls
+scrambler.print     // string — the sequence joined with spaces
+scrambler.difficulty // 0 | 1 | 2 — selects from scrambleLength table
+```
+
+### Scramble length table
+
+| Cube size | Easy | Medium | Hard |
+| --------- | ---- | ------ | ---- |
+| 2×2       | 7    | 9      | 11   |
+| 3×3       | 20   | 25     | 30   |
+| 4×4       | 30   | 40     | 50   |
+| 5×5       | 40   | 60     | 80   |
+
+### How `scramble()` generates moves
+
+Random face letters are drawn from `'UDLRFB'` (3×3 and smaller) or
+`'UuDdLlRrFfBb'` (4×4+, lowercase = inner slice). A modifier is appended at
+random: `""` (clockwise), `"'"` (counter-clockwise), or `"2"` (double). Two
+guard rules prevent adjacent faces repeating on the same axis:
+
+```
+if move[0] == moves[count-1][0] → skip   // no two same faces in a row
+if move[0] == moves[count-2][0] → skip   // no same face two back
+```
+
+### `convert()` and `ScrambledLayerMove`
+
+After `moves` is populated, `convert()` walks the array and calls
+`convertMove()` on each entry, expanding `"2"` modifiers into two identical
+entries so `Controls.scrambleCube()` only needs to process one item per frame.
+
+`convertMove()` returns a `ScrambledLayerMove` — a `LayerMove` with an extra
+`name` field:
+
+```ts
+interface ScrambledLayerMove {
+  position: THREE.Vector3; // which slice to grab
+  axis: 'x' | 'y' | 'z';  // rotation axis
+  angle: number;           // ±π/2
+  name: string;            // original notation string e.g. "F2"
+}
+```
+
+The angle formula mirrors the `MOVES` table in `Controls`:
+`(π/2) * -row * (modifier === "'" ? -1 : 1)` where `row` is `±1` from the
+face-to-row map.
+
+### Integration with `Controls.scrambleCube()`
+
+```
+scrambler.scramble()   → populates scrambler.converted (e.g. 25 entries)
+
+controls.scrambleCube(scrambler)
+  │
+  ├─ pop converted[0] → getLayer / selectLayer / rotateLayer(isScramble=true)
+  │      (isScramble: flipConfig forced to 0, onMove skipped)
+  │
+  └─ onComplete → converted.shift(); if length > 0 → scrambleCube(scrambler)
+```
+
+`scramble()` mutates `converted` by shifting entries off the front, so each
+`Scrambler` instance is single-use per call to `scramble()`. Call `scramble()`
+again before the next `scrambleCube()`.
+
+---
+
+## 12. Wiring order & the `controls.group` invariant
 
 **The problem.** `RubikCube.init()` calls `object.clear()`, which removes ALL
 children — including `controls.group`. If `group` is not re-added, pieces
@@ -418,6 +504,9 @@ this.context.cube = this.rubikCube;
 this.controls = new Controls(this.context);
 this.context.controls = this.controls;
 
+this.scrambler = new Scrambler(this.context);
+this.context.scrambler = this.scrambler;
+
 this.rubikCube.init();
 this.rubikCube.object.add(this.controls.group); // ← must follow every init()
 this.controls.enable();
@@ -430,7 +519,7 @@ future `init()` call (e.g. size change) would strip the group again.
 
 ---
 
-## 12. Glossary
+## 13. Glossary
 
 | Term               | Meaning |
 | ------------------ | ------- |
@@ -439,6 +528,8 @@ future `init()` call (e.g. size change) would strip the group again.
 | **edge / sticker** | A colored `RoundedPlaneGeometry` mesh on a face. (Note: "edge" here means *sticker face*, not the cube-theory "edge piece".) |
 | **holder / animator / object** | The three nested rotation-anchor containers. |
 | **group**          | `Controls`'s temporary reparenting node; pieces move here during an animated layer rotation. |
-| **`GameContext`**  | `{ engine, world, cube?, controls? }` bag wired incrementally in `cube.ts`. |
-| **`flipConfig`**   | Index `0–2` selecting the easing preset and duration for layer moves. |
+| **`GameContext`**  | `{ engine, world, cube?, controls?, scrambler? }` bag wired incrementally in `cube.ts`. |
+| **`Scrambler`**    | Generates/parses a move sequence and converts it to `ScrambledLayerMove[]` for `Controls.scrambleCube()`. |
+| **`ScrambledLayerMove`** | `LayerMove` extended with a `name` string (the original notation, e.g. `"F2"`). |
+| **`flipConfig`**   | Index `0–2` selecting the easing preset and duration for layer moves. `0` is always used during scramble. |
 | **`frustumCulled`**| Three.js flag; disabled so pieces never disappear at screen edges mid-rotation. |

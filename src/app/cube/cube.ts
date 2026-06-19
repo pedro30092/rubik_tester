@@ -7,7 +7,7 @@ import {
   Scrambler,
   GameContext,
   type Move,
-} from './cube-engine';
+} from '../../cube-engine/cube-engine';
 
 @Component({
   selector: 'app-cube',
@@ -62,7 +62,6 @@ export class Cube implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('Cleaning up animation engine...');
     this.world.dispose();
     this.engine.clear();
   }
