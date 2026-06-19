@@ -1,5 +1,7 @@
-<button (click)="move('L')">Move L</button>
-<button (click)="move('R')">Move R</button>
-<button (click)="scramble()">Scramble</button>
-<button (click)="reset()">Reset</button>
+<button (click)="spinLeft()">←</button>
+<button (click)="move('L')">L</button>
+<button (click)="move('R')">R</button>
+<button (click)="scramble()">Scr</button>
+<button (click)="reset()">Rst</button>
+<button [class.off]="!whiteUp()" (click)="flipOrientation()">Up</button>
 <div class="cube-game" #container></div>

@@ -16,6 +16,13 @@
 * **`Menu` Component:** Floating menu overlay. Routes to `/scramble` or `/learning`.
 * **`Scramble` Component (`/scramble`):** Triggered when scrambling mid-game with the poof animation.
 * **`Learning` Component (`/learning`):** Area to test move algorithms via `applyAlgorithm()`.
+* **`src/cube-engine/README.md`:** Technical internals reference for the cube engine. Before implementing or evaluating any feature request touching the 3D layer (geometry, scene graph, animations, moves, scrambler, colors), read the relevant section of this file to check if the functionality already exists or can be enhanced. Sections of interest:
+  * Colors / theming → §7 `updateColors()` and `DEFAULT_CUBE_COLORS` table
+  * Move animations / easing feel → §9 `flipConfig` and `Tween`
+  * Programmatic moves → §10 `Controls` public API and `MOVES` table
+  * Scramble logic → §11 `Scrambler` public API
+  * Scene hierarchy → §3 and §12 (wiring invariants)
+
 
 ### Routes
 * `/` -> `Game` (default view)

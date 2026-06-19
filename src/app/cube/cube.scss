@@ -23,4 +23,12 @@ canvas {
 button {
   position: relative;
   z-index: 10;
+  width: 50px;
+  font-size: 11px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+button.off {
+  opacity: 0.35;
 }

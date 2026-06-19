@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, ElementRef, OnDestroy } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, ElementRef, OnDestroy, signal } from '@angular/core';
 import {
   AnimationEngine,
   RubikCube,
@@ -24,6 +24,8 @@ export class Cube implements AfterViewInit, OnDestroy {
   private rubikCube!: RubikCube;
   private controls!: Controls;
   private scrambler!: Scrambler;
+
+  readonly whiteUp = signal(true);
 
   ngAfterViewInit(): void {
     // Dynamically import the animation engine to avoid loading it before the view is initialized.
@@ -59,6 +61,16 @@ export class Cube implements AfterViewInit, OnDestroy {
   reset(): void {
     this.rubikCube.init();
     this.rubikCube.object.add(this.controls.group);
+  }
+
+  flipOrientation(): void {
+    const next = !this.whiteUp();
+    this.whiteUp.set(next);
+    this.rubikCube.holder.rotation.x = next ? 0 : Math.PI;
+  }
+
+  spinLeft(): void {
+    this.rubikCube.holder.rotation.y += Math.PI / 2;
   }
 
   ngOnDestroy(): void {
