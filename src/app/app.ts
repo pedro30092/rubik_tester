@@ -1,11 +1,9 @@
 import { Component, ViewEncapsulation, isDevMode } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Menu } from './menu/menu';
-import { Game } from './game/game';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Menu, Game],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   encapsulation: ViewEncapsulation.None,
