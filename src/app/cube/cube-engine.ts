@@ -681,6 +681,7 @@ export interface GameContext {
   world: World;
   cube?: RubikCube;
   controls?: Controls;
+  scrambler?: Scrambler;
 }
 
 // ─── RubikCube ───────────────────────────────────────────────────────────────
@@ -988,7 +989,7 @@ export class Controls {
     this.state = ControlState.Rotating;
 
     this.selectLayer(layer);
-    this.rotateLayer(m.angle, () => {
+    this.rotateLayer(m.angle, false, () => {
       this.state = ControlState.Still;
       callback();
     });
@@ -996,8 +997,25 @@ export class Controls {
     return true;
   }
 
-  private rotateLayer(rotation: number, callback: () => void): void {
-    const config = this.flipConfig;
+  scrambleCube(scrambler: Scrambler): void {
+    const converted = scrambler.converted;
+    const move = converted[0];
+    const layer = this.getLayer(move.position);
+
+    this.flipAxis = new THREE.Vector3();
+    this.flipAxis[move.axis] = 1;
+
+    this.selectLayer(layer);
+    this.rotateLayer(move.angle, true, () => {
+      converted.shift();
+      if (converted.length > 0) {
+        this.scrambleCube(scrambler);
+      }
+    });
+  }
+
+  private rotateLayer(rotation: number, isScramble: boolean, callback: () => void): void {
+    const config = isScramble ? 0 : this.flipConfig;
     const easing = this.flipEasings[config];
     const duration = this.flipSpeeds[config];
     const cube = this.context.cube!;
@@ -1009,7 +1027,7 @@ export class Controls {
         this.group.rotateOnAxis(this.flipAxis, tween.delta * rotation);
       },
       onComplete: () => {
-        this.onMove();
+        if (!isScramble) this.onMove();
 
         const layer = this.flipLayer!.slice(0);
 
@@ -1091,4 +1109,88 @@ export class Controls {
 /** Replacement for the removed Euler.toVector3(). */
 function eulerToVector3(euler: THREE.Euler): THREE.Vector3 {
   return new THREE.Vector3(euler.x, euler.y, euler.z);
+}
+
+// ─── Scrambler ───────────────────────────────────────────────────────────────
+
+interface ScrambledLayerMove extends LayerMove {
+  name: string;
+}
+
+export class Scrambler {
+  difficulty = 0;
+
+  private readonly scrambleLength: Record<number, number[]> = {
+    2: [7, 9, 11],
+    3: [20, 25, 30],
+    4: [30, 40, 50],
+    5: [40, 60, 80],
+  };
+
+  moves: string[] = [];
+  converted: ScrambledLayerMove[] = [];
+  print = '';
+
+  constructor(private context: GameContext) {}
+
+  scramble(scramble?: string): this {
+    let count = 0;
+    this.moves = typeof scramble !== 'undefined' ? scramble.split(' ') : [];
+
+    if (this.moves.length < 1) {
+      const scrambleLength = this.scrambleLength[this.context.cube!.size][this.difficulty];
+      const faces = this.context.cube!.size < 4 ? 'UDLRFB' : 'UuDdLlRrFfBb';
+      const modifiers = ['', "'", '2'];
+      const total = typeof scramble === 'undefined' ? scrambleLength : scramble;
+
+      while (count < (total as number)) {
+        const move =
+          faces[Math.floor(Math.random() * faces.length)] +
+          modifiers[Math.floor(Math.random() * 3)];
+
+        if (count > 0 && move.charAt(0) === this.moves[count - 1].charAt(0)) continue;
+        if (count > 1 && move.charAt(0) === this.moves[count - 2].charAt(0)) continue;
+
+        this.moves.push(move);
+        count++;
+      }
+    }
+
+    this.convert();
+    this.print = this.moves.join(' ');
+
+    return this;
+  }
+
+  convert(): void {
+    this.converted = [];
+
+    this.moves.forEach((move) => {
+      const convertedMove = this.convertMove(move);
+      const modifier = move.charAt(1);
+
+      this.converted.push(convertedMove);
+      if (modifier === '2') this.converted.push({ ...convertedMove });
+    });
+  }
+
+  private convertMove(move: string): ScrambledLayerMove {
+    const face = move.charAt(0);
+    const modifier = move.charAt(1);
+
+    const axisMap: Record<string, Axis> = { D: 'y', U: 'y', L: 'x', R: 'x', F: 'z', B: 'z' };
+    const rowMap: Record<string, number> = { D: -1, U: 1, L: -1, R: 1, F: 1, B: -1 };
+
+    const axis = axisMap[face.toUpperCase()];
+    let row = rowMap[face.toUpperCase()];
+
+    if (this.context.cube!.size > 3 && face !== face.toUpperCase()) row = row * 2;
+
+    const position = new THREE.Vector3();
+    position[axis] = row;
+
+    const angle = (Math.PI / 2) * -row * (modifier === "'" ? -1 : 1);
+
+    return { position, axis, angle, name: move };
+  }
 }

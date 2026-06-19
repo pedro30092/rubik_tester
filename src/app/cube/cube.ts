@@ -1,5 +1,13 @@
 import { Component, ViewChild, AfterViewInit, ElementRef, OnDestroy } from '@angular/core';
-import { AnimationEngine, RubikCube, World, Controls, GameContext, type Move } from './cube-engine';
+import {
+  AnimationEngine,
+  RubikCube,
+  World,
+  Controls,
+  Scrambler,
+  GameContext,
+  type Move,
+} from './cube-engine';
 
 @Component({
   selector: 'app-cube',
@@ -15,6 +23,7 @@ export class Cube implements AfterViewInit, OnDestroy {
   private context!: GameContext;
   private rubikCube!: RubikCube;
   private controls!: Controls;
+  private scrambler!: Scrambler;
 
   ngAfterViewInit(): void {
     // Dynamically import the animation engine to avoid loading it before the view is initialized.
@@ -29,6 +38,9 @@ export class Cube implements AfterViewInit, OnDestroy {
     this.controls = new Controls(this.context);
     this.context.controls = this.controls;
 
+    this.scrambler = new Scrambler(this.context);
+    this.context.scrambler = this.scrambler;
+
     this.rubikCube.init();
     this.rubikCube.object.add(this.controls.group);
     this.controls.enable();
@@ -36,8 +48,17 @@ export class Cube implements AfterViewInit, OnDestroy {
 
   /** Public entry point for UI buttons — e.g. <button (click)="move('L')"> */
   move(notation: Move): void {
-    console.log(`Moving ${notation}...`);
     this.controls.move(notation);
+  }
+
+  scramble(): void {
+    this.scrambler.scramble();
+    this.controls.scrambleCube(this.scrambler);
+  }
+
+  reset(): void {
+    this.rubikCube.init();
+    this.rubikCube.object.add(this.controls.group);
   }
 
   ngOnDestroy(): void {
