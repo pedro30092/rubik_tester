@@ -8,6 +8,7 @@
         <app-algorithm-card
           [config]="algo"
           [active]="selectedAlgorithm()?.id === algo.id"
+          [baseRotation]="baseRotation()"
           (practiced)="algorithmPracticed.emit($event)"
         />
       }

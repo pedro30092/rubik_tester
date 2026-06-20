@@ -9,12 +9,19 @@
     [selectedAlgorithm]="selectedAlgorithm()"
     [currentSpeed]="currentSpeed()"
     [currentColors]="currentColors()"
+    [baseRotation]="baseRotation"
     (stepSelected)="onStepSelected($event)"
     (categorySelected)="onCategorySelected($event)"
     (algorithmPracticed)="onAlgorithmPracticed($event)"
     (speedChanged)="onSpeedChanged($event)"
     (colorChanged)="onColorChanged($event)"
   />
+
+  @if (selectedStep()) {
+    <button class="learning__reset-btn" (click)="onResetToBase()" title="Reset to base position">
+      ↺ Reset
+    </button>
+  }
 
   @if (toastMessage()) {
     <div class="learning__toast">{{ toastMessage() }}</div>

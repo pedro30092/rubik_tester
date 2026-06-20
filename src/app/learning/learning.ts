@@ -35,6 +35,10 @@ export class Learning implements AfterViewInit, OnDestroy {
   currentSpeed = signal<SpeedPreset>(2);
   currentColors = signal<CubeColors>({ ...DEFAULT_CUBE_COLORS });
 
+  // Stored synchronously when a step is selected — used as the hook before
+  // every algorithm setup so buildFaceRemapping() reads the correct quaternion.
+  baseRotation: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
+
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngAfterViewInit(): void {
@@ -63,6 +67,18 @@ export class Learning implements AfterViewInit, OnDestroy {
     this.selectedStep.set(step);
     this.selectedCategory.set(null);
     this.selectedAlgorithm.set(null);
+
+    // Compute and save base rotation from the step's orientation config.
+    this.baseRotation = { x: 0, y: 0, z: 0 };
+    for (const rot of step.orientation ?? []) {
+      this.baseRotation[rot.axis] = rot.angle;
+    }
+
+    this.resetCube();
+    // Animate to step orientation for visual feedback.
+    for (const rot of step.orientation ?? []) {
+      this.rubikCube.rotateCube(rot.axis, rot.angle);
+    }
   }
 
   onCategorySelected(category: CategoryConfig): void {
@@ -73,6 +89,16 @@ export class Learning implements AfterViewInit, OnDestroy {
   onAlgorithmPracticed(algo: AlgorithmConfig): void {
     this.selectedAlgorithm.set(algo);
     this.setupAlgorithm(algo);
+  }
+
+  onResetToBase(): void {
+    const step = this.selectedStep();
+    if (!step) return;
+    this.selectedAlgorithm.set(null);
+    this.resetCube();
+    for (const rot of step.orientation ?? []) {
+      this.rubikCube.rotateCube(rot.axis, rot.angle);
+    }
   }
 
   onSpeedChanged(speed: SpeedPreset): void {
@@ -86,33 +112,41 @@ export class Learning implements AfterViewInit, OnDestroy {
     this.rubikCube?.updateColors(updated);
   }
 
-  private setupAlgorithm(algo: AlgorithmConfig): void {
-    this.controls.disable();
+  // Rebuilds pieces to solved state. Does NOT touch holder rotation.
+  private resetCube(): void {
     this.rubikCube.init();
     this.rubikCube.object.add(this.controls.group);
     this.rubikCube.updateColors(this.currentColors());
+    this.controls.enable();
+  }
+
+  // Applies the stored base rotation synchronously directly to holder so
+  // buildFaceRemapping() reads the correct quaternion before applyAlgorithm.
+  private applyBaseRotation(): void {
+    const { x, y, z } = this.baseRotation;
+    this.rubikCube.holder.rotation.set(x, y, z);
+  }
+
+  private setupAlgorithm(algo: AlgorithmConfig): void {
+    this.resetCube();
+    this.applyBaseRotation(); // ← hook: base orientation before notation runs
 
     const setupMoves = invertAlgorithm(algo.notation);
-
     if (setupMoves.length === 0) {
-      this.controls.enable();
       this.showToast(`${algo.label} — ready to practice!`);
       return;
     }
 
     const originalOnMove = this.controls.onMove;
     let movesLeft = setupMoves.length;
-
     this.controls.onMove = () => {
       movesLeft--;
       if (movesLeft === 0) {
         this.controls.onMove = originalOnMove;
-        this.controls.enable();
         this.showToast(`${algo.label} — ready to practice!`);
       }
     };
 
-    this.controls.enable();
     this.controls.applyAlgorithm(setupMoves);
   }
 

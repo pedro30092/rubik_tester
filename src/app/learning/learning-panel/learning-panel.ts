@@ -21,6 +21,7 @@ export class LearningPanel {
   selectedAlgorithm = input<AlgorithmConfig | null>(null);
   currentSpeed = input<SpeedPreset>(2);
   currentColors = input<CubeColors | undefined>(undefined);
+  baseRotation = input<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
 
   stepSelected = output<StepConfig>();
   categorySelected = output<CategoryConfig>();

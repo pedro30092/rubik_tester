@@ -26,6 +26,7 @@ import { invertAlgorithm } from '../../../algorithm-utils';
 export class AlgorithmCard implements AfterViewInit, OnDestroy {
   config = input.required<AlgorithmConfig>();
   active = input(false);
+  baseRotation = input<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
 
   practiced = output<AlgorithmConfig>();
 
@@ -48,6 +49,11 @@ export class AlgorithmCard implements AfterViewInit, OnDestroy {
     rubikCube.init();
     rubikCube.object.add(controls.group);
     controls.enable();
+
+    // Apply step base orientation synchronously before applyAlgorithm so
+    // buildFaceRemapping() reads the correct quaternion.
+    const { x, y, z } = this.baseRotation();
+    rubikCube.holder.rotation.set(x, y, z);
 
     const setup = invertAlgorithm(this.config().notation);
     if (setup.length > 0) {

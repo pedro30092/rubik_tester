@@ -31,6 +31,32 @@
   overflow: hidden;
 }
 
+.learning__reset-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: #122030;
+  border: 1px solid #1e2d3d;
+  border-radius: 8px;
+  color: #6b7c93;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  z-index: 50;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+
+  &:hover {
+    background: #1a2e42;
+    border-color: #2e4d6b;
+    color: #cdd8e3;
+  }
+}
+
 .learning__toast {
   position: fixed;
   bottom: 2rem;

@@ -36,6 +36,7 @@
         <app-algorithm-grid
           [algorithms]="category.algorithms"
           [selectedAlgorithm]="selectedAlgorithm()"
+          [baseRotation]="baseRotation()"
           (algorithmPracticed)="algorithmPracticed.emit($event)"
         />
       }

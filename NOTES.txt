@@ -7,3 +7,11 @@ Quick Commands:
 
 SIMPLE PROMPTS (this are used for top priority for the AI):
 -The context and why there are other things is irrelevant and we will focus only in what Im asking.
+
+-----------------------------
+RUBIK CUBE
+
+The state consider in CLAUDE 
+                Up=White
+Left=Green      Front=Red   Right=Blue     /    Back=Orange
+                Down=Yellow
