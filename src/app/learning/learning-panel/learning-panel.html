@@ -1,0 +1,57 @@
+<div class="panel">
+  <div class="panel__tabs">
+    <button
+      class="panel__tab"
+      [class.panel__tab--active]="activeTab() === 'algorithms'"
+      (click)="setTab('algorithms')"
+    >
+      Algorithms
+    </button>
+    <button
+      class="panel__tab"
+      [class.panel__tab--active]="activeTab() === 'settings'"
+      (click)="setTab('settings')"
+    >
+      Settings
+    </button>
+  </div>
+
+  @if (activeTab() === 'algorithms') {
+    <div class="panel__content">
+      <app-step-selector
+        [steps]="steps()"
+        [selected]="selectedStep()"
+        (stepSelected)="stepSelected.emit($event)"
+      />
+
+      @if (selectedStep(); as step) {
+        <app-category-selector
+          [categories]="step.categories"
+          [selected]="selectedCategory()"
+          (categorySelected)="categorySelected.emit($event)"
+        />
+      }
+
+      @if (selectedCategory(); as category) {
+        <app-algorithm-grid
+          [algorithms]="category.algorithms"
+          [selectedAlgorithm]="selectedAlgorithm()"
+          (algorithmPracticed)="algorithmPracticed.emit($event)"
+        />
+      }
+    </div>
+  }
+
+  @if (activeTab() === 'settings') {
+    <div class="panel__content">
+      @if (currentColors(); as colors) {
+        <app-settings-section
+          [currentSpeed]="currentSpeed()"
+          [currentColors]="colors"
+          (speedChanged)="speedChanged.emit($event)"
+          (colorChanged)="colorChanged.emit($event)"
+        />
+      }
+    </div>
+  }
+</div>

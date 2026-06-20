@@ -1,0 +1,7 @@
+<div class="card" [class.card--active]="active()">
+  <div class="card__preview" #preview></div>
+  <div class="card__footer">
+    <span class="card__label">{{ config().label }}</span>
+    <button class="card__practice-btn" (click)="onPractice()">Practice</button>
+  </div>
+</div>

@@ -1,4 +1,22 @@
-<aside class="learning">
-  <button class="learning__btn" (click)="onTest()">Test</button>
-  <button class="learning__btn" (click)="onTestAlgorithm()">Test Algorithm</button>
-</aside>
+<div class="learning">
+  <div class="learning__cube" #cubeContainer></div>
+
+  <app-learning-panel
+    class="learning__panel"
+    [steps]="steps"
+    [selectedStep]="selectedStep()"
+    [selectedCategory]="selectedCategory()"
+    [selectedAlgorithm]="selectedAlgorithm()"
+    [currentSpeed]="currentSpeed()"
+    [currentColors]="currentColors()"
+    (stepSelected)="onStepSelected($event)"
+    (categorySelected)="onCategorySelected($event)"
+    (algorithmPracticed)="onAlgorithmPracticed($event)"
+    (speedChanged)="onSpeedChanged($event)"
+    (colorChanged)="onColorChanged($event)"
+  />
+
+  @if (toastMessage()) {
+    <div class="learning__toast">{{ toastMessage() }}</div>
+  }
+</div>

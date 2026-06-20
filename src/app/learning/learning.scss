@@ -1,34 +1,62 @@
-.learning {
+:host {
+  display: block;
   position: fixed;
-  top: 50%;
-  right: 1.2em;
-  transform: translateY(-50%);
-  z-index: 20;
+  inset: 0;
+}
+
+.learning {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: #08101a;
+  overflow: hidden;
+}
+
+.learning__cube {
+  flex: 0 0 60%;
+  position: relative;
+  overflow: hidden;
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.learning__panel {
+  flex: 0 0 40%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.4em;
-  font-size: 1.2em;
-  color: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.learning__toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.65rem 1.4rem;
+  background: #1a3a5c;
+  border: 1px solid #4da3ff;
+  border-radius: 8px;
+  color: #b8deff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 24px #0040a055;
+  animation: toast-in 0.25s ease;
   pointer-events: none;
+  z-index: 100;
 }
 
-.learning__btn {
-  display: block;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  color: inherit;
-  font-family: inherit;
-  font-weight: inherit;
-  font-size: 0.4em;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  pointer-events: all;
-  transition: color 0.15s ease;
-}
-
-.learning__btn:hover {
-  color: rgba(0, 0, 0, 0.7);
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }

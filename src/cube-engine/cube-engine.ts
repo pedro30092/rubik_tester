@@ -691,7 +691,7 @@ export interface GameContext {
 
 type CubePosition = THREE.Vector3 & { edges: number[] };
 
-interface CubeColors {
+export interface CubeColors {
   U: number;
   D: number;
   F: number;
@@ -702,7 +702,7 @@ interface CubeColors {
   G: number;
 }
 
-const DEFAULT_CUBE_COLORS: CubeColors = {
+export const DEFAULT_CUBE_COLORS: CubeColors = {
   U: 0xffffff,
   D: 0xffef48,
   F: 0xef3923,
@@ -995,6 +995,11 @@ export class Controls {
 
   disable(): void {
     this.enabled = false;
+  }
+
+  /** 0 = fast (125 ms), 1 = smooth (200 ms), 2 = bouncy (300 ms) */
+  setSpeed(config: 0 | 1 | 2): void {
+    this.flipConfig = config;
   }
 
   /**

@@ -1,0 +1,10 @@
+<div class="category-selector">
+  <span class="category-selector__label">Category</span>
+  <div class="category-selector__chips">
+    @for (cat of categories(); track cat.id) {
+      <button class="chip" [class.chip--active]="selected()?.id === cat.id" (click)="select(cat)">
+        {{ cat.label }}
+      </button>
+    }
+  </div>
+</div>

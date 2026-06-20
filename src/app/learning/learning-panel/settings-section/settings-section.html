@@ -1,0 +1,36 @@
+<div class="settings">
+  <section class="settings__group">
+    <span class="settings__group-label">Animation Speed</span>
+    <div class="speed-options">
+      @for (opt of speedOptions; track opt.value) {
+        <button
+          class="speed-btn"
+          [class.speed-btn--active]="currentSpeed() === opt.value"
+          (click)="onSpeedClick(opt.value)"
+        >
+          <span class="speed-btn__label">{{ opt.label }}</span>
+          <span class="speed-btn__sub">{{ opt.sub }}</span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <section class="settings__group">
+    <span class="settings__group-label">Face Colors</span>
+    <div class="color-grid">
+      @for (item of faceLabels; track item.face) {
+        <label class="color-swatch">
+          <span class="color-swatch__well" [style.background]="faceHex()[item.face]">
+            <input
+              type="color"
+              class="color-swatch__input"
+              [value]="faceHex()[item.face]"
+              (input)="onColorInput(item.face, $event)"
+            />
+          </span>
+          <span class="color-swatch__name">{{ item.name }}</span>
+        </label>
+      }
+    </div>
+  </section>
+</div>

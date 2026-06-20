@@ -1,0 +1,16 @@
+<div class="algorithm-grid">
+  <span class="algorithm-grid__label">Algorithms</span>
+  @if (algorithms().length === 0) {
+    <p class="algorithm-grid__empty">No algorithms in this category yet.</p>
+  } @else {
+    <div class="algorithm-grid__cards">
+      @for (algo of algorithms(); track algo.id) {
+        <app-algorithm-card
+          [config]="algo"
+          [active]="selectedAlgorithm()?.id === algo.id"
+          (practiced)="algorithmPracticed.emit($event)"
+        />
+      }
+    </div>
+  }
+</div>

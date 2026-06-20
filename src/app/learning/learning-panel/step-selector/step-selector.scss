@@ -1,0 +1,68 @@
+.step-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.step-selector__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4a5c6e;
+}
+
+.step-selector__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  background: #122030;
+  border: 1px solid #1e2d3d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    background: #1a2e42;
+    border-color: #2e4d6b;
+  }
+
+  &--active {
+    background: #1a3a5c;
+    border-color: #4da3ff;
+    box-shadow: 0 0 0 1px #4da3ff33;
+  }
+}
+
+.chip__acronym {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2eaf4;
+  line-height: 1.1;
+}
+
+.chip__name {
+  font-size: 0.6rem;
+  color: #6b7c93;
+  letter-spacing: 0.03em;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+}
+
+.chip--active .chip__acronym {
+  color: #7dc4ff;
+}
+
+.chip--active .chip__name {
+  color: #4da3ff;
+}

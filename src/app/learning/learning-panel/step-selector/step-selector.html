@@ -1,0 +1,11 @@
+<div class="step-selector">
+  <span class="step-selector__label">Step</span>
+  <div class="step-selector__chips">
+    @for (step of steps(); track step.id) {
+      <button class="chip" [class.chip--active]="selected()?.id === step.id" (click)="select(step)">
+        <span class="chip__acronym">{{ step.label }}</span>
+        <span class="chip__name">{{ step.name }}</span>
+      </button>
+    }
+  </div>
+</div>
