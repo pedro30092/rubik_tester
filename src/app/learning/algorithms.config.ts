@@ -42,7 +42,7 @@ export const LEARNING_STEPS: StepConfig[] = [
         algorithms: [
           {
             id: 'f2l-basic-a',
-            label: 'Algorithm X',
+            label: 'Algorithm A',
             notation: ["U'", "F'", 'U', 'F'],
             preview: { cameraAngle: 'corner' },
           },
